@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City Dashboard</title>
+
+    <!-- CSS file -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Chart.js lib for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <!-- simple nav bar -->
+    <div class="top">
+        <div class="title">Smart City Dashboard</div>
+        <!-- <div class="small">Weather + Air Quality (Live)</div> -->
+    </div>
+
+    <div class="wrap">
+
+        <!-- city selector row -->
+        <div class="sel">
+            <label for="cityDropdown">City:</label>
+
+            <!-- select city -->
+            <select id="cityDropdown">
+                <option value="delhi">Delhi</option>
+                <option value="mumbai">Mumbai</option>
+                <option value="bangalore">Bangalore</option>
+                <option value="new york">New York</option>
+                <option value="tokyo">Tokyo</option>
+                <option value="london">London</option>
+                <option value="dubai">Dubai</option>
+                <option value="sydney">Sydney</option>
+            </select>
+
+            <!-- button to load -->
+            <button id="refreshBtn">Get Data</button>
+        </div>
+
+        <!-- cards row -->
+        <div class="cards">
+
+            <div class="card">
+                <div class="label">Temperature</div>
+                <div class="big" id="temperature">--</div>
+                <div class="unit">°C</div>
+            </div>
+
+            <div class="card">
+                <div class="label">Humidity</div>
+                <div class="big" id="humidity">--</div>
+                <div class="unit">%</div>
+            </div>
+
+            <div class="card">
+                <div class="label">Wind</div>
+                <div class="big" id="windSpeed">--</div>
+                <div class="unit">m/s</div>
+            </div>
+
+            <div class="card">
+                <div class="label">PM2.5</div>
+                <div class="big" id="pm25">--</div>
+                <div class="unit">µg/m³</div>
+            </div>
+
+            <div class="card">
+                <div class="label">PM10</div>
+                <div class="big" id="pm10">--</div>
+                <div class="unit">µg/m³</div>
+            </div>
+
+        </div>
+
+        <!-- updated time -->
+        <div id="lastUpdated" class="updated">Last updated: --</div>
+
+        <!-- charts row -->
+        <div class="charts">
+
+            <div class="chartbox">
+                <div class="chtitle">Temperature Trend</div>
+                <canvas id="tempChart"></canvas>
+            </div>
+
+            <div class="chartbox">
+                <div class="chtitle">PM2.5 Trend</div>
+                <canvas id="pm25Chart"></canvas>
+            </div>
+
+        </div>
+
+        <!-- weekly data row -->
+        <div class="weekly">
+
+            <div class="chartbox">
+                <div class="chtitle">Weekly Temperature</div>
+                <canvas id="weeklyTempChart"></canvas>
+            </div>
+
+            <div class="chartbox">
+                <div class="chtitle">Weekly PM2.5 (avg)</div>
+                <canvas id="weeklyPmChart"></canvas>
+            </div>
+
+        </div>
+
+        <!-- loading text -->
+        <div id="loadingText" class="loading">Loading...</div>
+
+        <!-- error message -->
+        <div id="errorMessage" class="err"></div>
+
+    </div>
+
+    <!-- JS file -->
+    <script src="script.js"></script>
+
+</body>
+</html>
