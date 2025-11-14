@@ -76,12 +76,26 @@ async function loadData(){
   showLoading(false);
 }
 
-// fetch 7-day weather forecast (One Call)
+// fetch 7-day weather forecast (One Call API 3.0)
 async function getWeeklyWeather(c){
   try{
-    const url = `https://api.openweathermap.org/data/2.5/onecall?lat=${c.lat}&lon=${c.lon}&exclude=current,minutely,hourly,alerts&units=metric&appid=${WEATHER_KEY}`;
-    const res = await fetch(url);
-    return res.json();
+    // Try One Call API 3.0 first (new endpoint)
+    let url = `https://api.openweathermap.org/data/3.0/onecall?lat=${c.lat}&lon=${c.lon}&exclude=current,minutely,hourly,alerts&units=metric&appid=${WEATHER_KEY}`;
+    let res = await fetch(url);
+    
+    // If 3.0 fails, try 2.5 (legacy)
+    if(!res.ok){
+      url = `https://api.openweathermap.org/data/2.5/onecall?lat=${c.lat}&lon=${c.lon}&exclude=current,minutely,hourly,alerts&units=metric&appid=${WEATHER_KEY}`;
+      res = await fetch(url);
+    }
+    
+    if(!res.ok){
+      console.warn('Weekly weather API error:', res.status, res.statusText);
+      return null;
+    }
+    
+    const data = await res.json();
+    return data;
   }catch(err){
     console.warn('weekly weather fetch failed', err);
     return null;
@@ -202,6 +216,35 @@ function makeCharts(){
         pointBackgroundColor:"#7fc1ff",
         tension:0.3
       }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: "#7fc1ff"
+          }
+        }
+      },
+      scales: {
+        y: {
+          ticks: {
+            color: "#9aa6bb"
+          },
+          grid: {
+            color: "rgba(154, 166, 187, 0.1)"
+          }
+        },
+        x: {
+          ticks: {
+            color: "#9aa6bb"
+          },
+          grid: {
+            color: "rgba(154, 166, 187, 0.1)"
+          }
+        }
+      }
     }
   });
 
@@ -218,6 +261,36 @@ function makeCharts(){
         pointBackgroundColor:"#ff8a80",
         tension:0.3
       }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: "#ff8a80"
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: "#9aa6bb"
+          },
+          grid: {
+            color: "rgba(154, 166, 187, 0.1)"
+          }
+        },
+        x: {
+          ticks: {
+            color: "#9aa6bb"
+          },
+          grid: {
+            color: "rgba(154, 166, 187, 0.1)"
+          }
+        }
+      }
     }
   });
 
@@ -234,7 +307,37 @@ function makeCharts(){
         borderWidth: 1
       }]
     },
-    options: { maintainAspectRatio: false }
+    options: {
+      maintainAspectRatio: false,
+      responsive: true,
+      plugins: {
+        legend: {
+          display: true,
+          labels: {
+            color: "#7fc1ff"
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: false,
+          ticks: {
+            color: "#9aa6bb"
+          },
+          grid: {
+            color: "rgba(154, 166, 187, 0.1)"
+          }
+        },
+        x: {
+          ticks: {
+            color: "#9aa6bb"
+          },
+          grid: {
+            color: "rgba(154, 166, 187, 0.1)"
+          }
+        }
+      }
+    }
   });
 
   // weekly PM2.5 chart
@@ -250,7 +353,37 @@ function makeCharts(){
         borderWidth: 1
       }]
     },
-    options: { maintainAspectRatio: false }
+    options: {
+      maintainAspectRatio: false,
+      responsive: true,
+      plugins: {
+        legend: {
+          display: true,
+          labels: {
+            color: "#ff8a80"
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: "#9aa6bb"
+          },
+          grid: {
+            color: "rgba(154, 166, 187, 0.1)"
+          }
+        },
+        x: {
+          ticks: {
+            color: "#9aa6bb"
+          },
+          grid: {
+            color: "rgba(154, 166, 187, 0.1)"
+          }
+        }
+      }
+    }
   });
 }
 
@@ -266,30 +399,51 @@ function updateWeeklyGraph(weeklyWeather, weeklyAQ){
     }
 
     // weeklyWeather: result from One Call - use daily array
-    if(weeklyWeather && weeklyWeather.daily && weeklyWeather.daily.length > 0){
+    if(weeklyWeather && weeklyWeather.daily && Array.isArray(weeklyWeather.daily) && weeklyWeather.daily.length > 0){
       const days = weeklyWeather.daily.slice(0,7);
-      weeklyTempArr = days.map(d => Math.round(d.temp.day));
+      weeklyTempArr = days.map(d => {
+        // Handle different possible temperature structures
+        const temp = d.temp?.day ?? d.temp?.max ?? d.temp;
+        return temp ? Math.round(temp) : null;
+      });
+      
+      // Ensure we have exactly 7 values (pad with null if needed)
+      while(weeklyTempArr.length < 7) weeklyTempArr.push(null);
+      
       weeklyTempChart.data.labels = labels;
-      weeklyTempChart.data.datasets[0].data = weeklyTempArr;
+      weeklyTempChart.data.datasets[0].data = weeklyTempArr.slice(0, 7);
     } else {
       // no data: show empty bars with labels
       weeklyTempChart.data.labels = labels;
-      weeklyTempChart.data.datasets[0].data = labels.map(() => null);
+      weeklyTempChart.data.datasets[0].data = new Array(7).fill(null);
     }
-    weeklyTempChart.update();
+    weeklyTempChart.update('none'); // 'none' mode for smoother updates
 
     // weeklyAQ: { labels:[], pm25:[] }
-    if(weeklyAQ && weeklyAQ.labels && weeklyAQ.labels.length > 0){
+    if(weeklyAQ && weeklyAQ.labels && Array.isArray(weeklyAQ.labels) && weeklyAQ.labels.length > 0){
       weeklyPmChart.data.labels = weeklyAQ.labels;
       weeklyPmChart.data.datasets[0].data = weeklyAQ.pm25;
     } else {
       // no data: show empty bars with default labels
       weeklyPmChart.data.labels = labels;
-      weeklyPmChart.data.datasets[0].data = labels.map(() => null);
+      weeklyPmChart.data.datasets[0].data = new Array(7).fill(null);
     }
-    weeklyPmChart.update();
+    weeklyPmChart.update('none'); // 'none' mode for smoother updates
   }catch(err){
     console.warn('updateWeeklyGraph error:', err);
+    // On error, still set labels so chart structure is visible
+    const labels = [];
+    for(let i = 6; i >= 0; i--){
+      const dt = new Date(); 
+      dt.setDate(dt.getDate() - i);
+      labels.push(dt.toLocaleDateString(undefined, { weekday: 'short' }));
+    }
+    weeklyTempChart.data.labels = labels;
+    weeklyTempChart.data.datasets[0].data = new Array(7).fill(null);
+    weeklyTempChart.update('none');
+    weeklyPmChart.data.labels = labels;
+    weeklyPmChart.data.datasets[0].data = new Array(7).fill(null);
+    weeklyPmChart.update('none');
   }
 }
 
