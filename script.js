@@ -13,7 +13,6 @@ const cities = {
 let tempChart, pmChart, weeklyTempChart, weeklyPmChart;
 let tempArr = [], pmArr = [], timeArr = [];
 let weeklyLabels = [], weeklyTempArr = [], weeklyPmArr = [];
-
 document.addEventListener("DOMContentLoaded", () => {
   makeCharts();
   loadData();
